@@ -4,11 +4,11 @@
     "type": "library",
     "require": {
         "php": ">=8.0",
-        "hyperf/cache": "~3.0.0",
-        "hyperf/elasticsearch": "^3.0",
-        "hyperf/paginator": "^3.0",
+        "hyperf/cache": "*",
+        "hyperf/elasticsearch": "*",
+        "hyperf/paginator": "*",
         "hyperf/framework": "*",
-        "hyperf/logger": "~3.0.0"
+        "hyperf/logger": "*"
     },
     "license": "MIT",
     "autoload": {
