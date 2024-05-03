@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 namespace ChaShaoEs;
+
 use Elasticsearch\ClientBuilder;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\ContainerInterface;
@@ -34,21 +35,21 @@ class Client
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function create(string $connection='default'):EsClient
+    public function create(string $connection = 'default'): EsClient
     {
-        $config=  $this->container->get(ConfigInterface::class)->get($connection, []);
+        $config = $this->container->get(ConfigInterface::class)->get($connection, []);
         $builder = ClientBuilder::create();
         if (Coroutine::getCid() > 0) {
             $handler = make(PoolHandler::class, [
                 'option' => [
-                    'max_connections' => $config['connections'],
+                    'max_connections' => $config['connections'] ?? 50,
                 ],
             ]);
             $builder->setHandler($handler);
         }
-        $client = $builder->setHosts([$config['hosts']])->build();
-        $logger = $this->container->get(LoggerFactory::class)->get('es','default');
-        $logger->info('elasticsearch-logger',$client->info());
+        $logger = $this->container->get(LoggerFactory::class)->get('es', 'default');
+        $client = $builder->setHosts([$config['hosts']])->setLogger($logger)->build();
+        $logger->info('elasticsearch-logger', $client->info());
         return $client;
 
     }

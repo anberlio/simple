@@ -231,8 +231,6 @@ class Builder
     /**
      * @param array $fields
      * @return Model|null
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
      */
     public function first(array $fields = ['*']): Model|null
     {
@@ -266,8 +264,6 @@ class Builder
     /**
      * 匹配项数
      * @return int
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
      */
     public function count(): int
     {
@@ -289,14 +285,15 @@ class Builder
             ];
         }
         $this->sql['body'] = array_filter($this->sql['body']);
-        $result=$this->client->count($this->sql);
-        /*try {
-            $result = $this->run('count', $this->sql);
-        } catch (ClientResponseException $e) {
-            if ($e->getCode() !== 404) {
-                throw new LogicException($e->getMessage(), $e->getCode());
-            }
-        }*/
+        try {
+            $result = $this->client->count($this->sql);
+        }catch (\Throwable |\Exception $e){
+            $this->logger->error('delete',[
+                'message'=>$e->getMessage(),
+                'code'=>$e->getCode()
+            ]);
+            throw  new LogicException($e->getMessage(),$e->getCode());
+        }
         return (int)($result['count'] ?? 0);
     }
 
@@ -305,8 +302,6 @@ class Builder
      * @param string $field
      * @param int $count
      * @return bool
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
      */
     public function increment(string $field, int $count = 1): bool
     {
@@ -321,8 +316,6 @@ class Builder
      * @param string $field
      * @param int $count
      * @return bool
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
      */
     public function decrement(string $field, int $count = 1): bool
     {
@@ -350,22 +343,21 @@ class Builder
         ];
 
         $this->sql['body'] = array_filter($this->sql['body']);
-        $result=$this->client->count($this->sql);
-       /* try {
-            $result = $this->run('count', $this->sql);
-        } catch (ClientResponseException $e) {
-            if ($e->getCode() !== 404) {
-                throw new LogicException($e->getMessage(), $e->getCode());
-            }
-        }*/
+        try {
+         $result=$this->client->count($this->sql);
+        }catch (\Throwable|\Exception $e){
+            $this->logger->error('delete',[
+                'message'=>$e->getMessage(),
+                'code'=>$e->getCode()
+            ]);
+            throw  new LogicException($e->getMessage(),$e->getCode());
+        }
         return (bool)($result['count'] ?? 0);
     }
 
     /**
      * 按查询条件删除文档
      * @return bool
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
      */
     public function delete(): bool
     {
@@ -382,14 +374,15 @@ class Builder
                 'query' => $this->query
             ]
         ];
-        $result=$this->client->deleteByQuery($this->sql);
-        /*try {
-            $result = $this->run('deleteByQuery', $this->sql);
-        } catch (ClientResponseException|\Elastic\Elasticsearch\Exception\ClientResponseException $e) {
-            if ($e->getCode() !== 404 && !Str::contains($e->getMessage(), 'but no document was found')) {
-                throw new LogicException($e->getMessage(), $e->getCode());
-            }
-        }*/
+        try {
+            $result = $this->client->deleteByQuery($this->sql);
+        }catch (\Throwable |\Exception $e){
+            $this->logger->error('delete',[
+                'message'=>$e->getMessage(),
+                'code'=>$e->getCode()
+            ]);
+            throw  new LogicException($e->getMessage(),$e->getCode());
+        }
         return isset($result['deleted']) && $result['deleted'] > 0;
     }
 
@@ -397,8 +390,6 @@ class Builder
      * 按查询条件更新数据
      * @param array $value
      * @return bool
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
      */
     public function update(array $value): bool
     {
@@ -416,15 +407,15 @@ class Builder
             $script = "ctx._source.$field = params.$field;" . $script;
             $params[$field] = $val;
         }
-
-        $result = $this->updateByQueryScript($script, $params);
-       /* try {
+        try {
             $result = $this->updateByQueryScript($script, $params);
-        } catch (ClientResponseException $e) {
-            if ($e->getCode() !== 404) {
-                throw new LogicException($e->getMessage(), $e->getCode());
-            }
-        }*/
+        }catch (\Throwable|\Exception $e){
+            $this->logger->error('update',[
+                'message'=>$e->getMessage(),
+                'code'=>$e->getCode()
+            ]);
+            throw  new LogicException($e->getMessage(),$e->getCode());
+        }
         return isset($result['updated']) && $result['updated'] > 0;
     }
 
@@ -433,8 +424,6 @@ class Builder
      * @param string $script
      * @param array $params
      * @return callable|array
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
      */
     public function updateByQueryScript(string $script, array $params = []): callable|array
     {
@@ -449,8 +438,15 @@ class Builder
                 'query' => $this->query
             ]
         ];
-        //$this->run('updateByQuery', $this->sql);
-        return  $this->client->updateByQuery($this->sql);
+        try {
+            return $this->client->updateByQuery($this->sql);
+        }catch (\Throwable|\Exception $e){
+            $this->logger->error('updateByQueryScript',[
+                'message'=>$e->getMessage(),
+                'code'=>$e->getCode()
+            ]);
+            throw  new  LogicException($e->getMessage(),$e->getCode());
+        }
     }
 
     /**
@@ -493,7 +489,6 @@ class Builder
     public function insert(array $values): Collection
     {
         $body = [];
-        var_dump($values);
         foreach ($values as $value) {
             $index = array_filter([
                 '_index' => $this->model->getIndex(),
@@ -507,11 +502,13 @@ class Builder
         $this->sql = $body;
         try {
             $result = $this->client->bulk($this->sql);
-            var_dump($result);
         }catch (\Throwable|\Exception $e){
-            var_dump($e->getMessage());
+            $this->logger->error('insert',[
+                'message'=>$e->getMessage(),
+                'code'=>$e->getCode()
+            ]);
+            throw  new  LogicException($e->getMessage(),$e->getCode());
         }
-        //$result = $this->run('bulk', $this->sql);
         return collect($result['items'])->map(function ($value, $key) use ($values) {
             $items = Arr::mergeArray($values[$key], ['id' => $value['index']['_id'] ?? null]);
             $model = $this->model->newInstance();
@@ -573,6 +570,10 @@ class Builder
                 return $result['_id'] ?? false;
             }
         } catch (\Throwable |\Exception $e) {
+            $this->logger->error('insert',[
+                'message'=>$e->getMessage(),
+                'code'=>$e->getCode()
+            ]);
             throw new LogicException($e->getMessage(), $e->getCode());
         }
         return false;
@@ -641,7 +642,15 @@ class Builder
                 'settings' => $settings
             ]
         ];
-        $result=$this->client->indices()->putSettings($this->sql);
+        try {
+            $result = $this->client->indices()->putSettings($this->sql);
+        }catch (\Throwable |\Exception $e){
+            $this->logger->error('insert',[
+                'message'=>$e->getMessage(),
+                'code'=>$e->getCode()
+            ]);
+            throw new LogicException($e->getMessage(),$e->getCode());
+        }
         return $result['acknowledged'] ?? false;
     }
 
@@ -691,7 +700,10 @@ class Builder
         try {
             $result=$this->client->indices()->create($this->sql);
         } catch (\Throwable |\Exception $e) {
-            echo $e->getMessage();
+            $this->logger->error('createIndex',[
+                'message'=>$e->getMessage(),
+                'code'=>$e->getCode()
+            ]);
             return false;
         }
         return $result['acknowledged'] ?? false;
@@ -706,7 +718,15 @@ class Builder
         $this->sql = [
             'index' => $this->model->getIndex()
         ];
-        $result=$this->client->indices()->delete($this->sql);
+        try {
+            $result = $this->client->indices()->delete($this->sql);
+        }catch (\Throwable|\Exception $e){
+            $this->logger->error('deleteIndex',[
+                'message'=>$e->getMessage(),
+                'code'=>$e->getCode()
+            ]);
+            throw  new  LogicException($e->getMessage(),$e->getCode());
+        }
         return $result['acknowledged'] ?? false;
     }
 
@@ -1329,35 +1349,6 @@ class Builder
         }
         return $this;
     }
-
-    /**
-     * 统一执行ES入口
-     * @param $method
-     * @param ...$parameters
-     * @return Elasticsearch|array
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-   /* protected function run($method, ...$parameters): Elasticsearch|array
-    {
-        $client = $this->client;
-        $sql = $this->sql;
-
-        if (strpos($method, '.')) {
-            $methods = explode('.', $method);
-            $method = $methods[1];
-            $client = $client->{$methods[0]}();
-        }
-
-        $this->logger->alert(Json::encode(compact('method', 'parameters', 'sql')));
-
-
-        $response = call([$client, $method], $parameters);
-        if ($response->getBody()->getSize() > 0) {
-            return $response->asArray();
-        }
-        return $response;
-    }*/
 
     /**
      * 搜索结果高亮显示
