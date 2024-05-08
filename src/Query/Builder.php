@@ -31,6 +31,7 @@ class Builder
     protected ConfigInterface $config;
     protected CacheInterface $cache;
     protected array $query;
+    protected array $aggs;
     protected array $highlight = []; //高亮查询字段
     protected array $searchAfter = []; //searchAfter分页方式，上次最后一项sort数据
     protected array $sql;
@@ -458,6 +459,63 @@ class Builder
     {
         $this->take = $take;
         return $this;
+    }
+
+
+    public function  withAggs(string $aggs,string $field,string $alis):Builder{
+        if(empty($aggs) || empty($field) || empty($alis)){
+            throw  new LogicException('抱歉查询错误');
+        }
+        $this->aggs[$alis]=[
+            $aggs=>[
+                'field'=>$field
+            ]
+        ];
+        return $this;
+    }
+
+    /**
+     * ElasticSearch 聚合查询
+     * @return Collection|null
+     */
+    public function aggs():Collection|null{
+        if(empty($this->aggs)) {
+            throw  new  LogicException('Missing aggs criteria');
+        };
+        if(empty($this->query)){
+            $this->sql=[
+                'index' => $this->model->getIndex(),
+                'version' => true,
+                'size' => 0,
+                'body'=>[
+                    'aggs'=>$this->aggs
+                ]
+            ];
+        }else{
+            $this->sql=[
+                'index' => $this->model->getIndex(),
+                'version' => true,
+                'size' => 0,
+                'body'=>[
+                    'query'=>$this->query,
+                    'aggs'=>$this->aggs,
+                ]
+            ];
+        }
+        $this->sql['body'] = array_filter($this->sql['body']);
+        try {
+            $result   = $this->client->search($this->sql);
+            $original =$result['aggregations']??[];
+            return Collection::make($original)->map(function ($value){
+                return round($value['value'],4);
+            });
+        }catch (\Exception |\Throwable $e){
+            $this->logger->error('insert',[
+                'message'=>$e->getMessage(),
+                'code'=>$e->getCode()
+            ]);
+            throw new LogicException($e->getMessage(), $e->getCode());
+        }
     }
 
     /**
