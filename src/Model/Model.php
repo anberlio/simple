@@ -86,8 +86,12 @@ abstract class Model implements Arrayable, Jsonable, JsonSerializable
     /**
      * @return $this
      */
-    public static function newInstance(): self
+    public  function newInstance(): self
     {
+        return new static();
+    }
+
+    public static  function getInstance():self{
         return new static();
     }
 
