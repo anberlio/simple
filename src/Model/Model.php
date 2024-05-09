@@ -10,6 +10,7 @@ use Hyperf\Collection\Collection;
 use Hyperf\Contract\Arrayable;
 use Hyperf\Contract\Jsonable;
 use Elasticsearch\Client as EsClient;
+use Hyperf\Stringable\Str;
 use JsonSerializable;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -52,9 +53,24 @@ abstract class Model implements Arrayable, Jsonable, JsonSerializable
     {
         $self = $this->newModelBuilder()->setModel($this);
         try {
-            //检查索引是否存在，不存在则创建
-            if (!$self->existsIndex()) {
-                $self->createIndex();
+            //注意这里只能用于查询
+            if(Str::contains($this->getIndex(),',')){
+                $indexes=array_filter(explode(',',$this->getIndex()));
+                foreach ($indexes as $index){
+                    //检查单个索引
+                    $this->setIndex($index);
+                    //检查索引是否存在，不存在则创建
+                    if (!$self->existsIndex()) {
+                        $self->createIndex();
+                    }
+                }
+                //充值当前索引
+                $this->setIndex(implode(',',$indexes));
+            }else{
+                //检查索引是否存在，不存在则创建
+                if (!$self->existsIndex()) {
+                    $self->createIndex();
+                }
             }
         } catch (\Exception $e) {
             echo '当前的连接错误:'.$e->getMessage();
