@@ -560,6 +560,9 @@ class Builder
         $this->sql = $body;
         try {
             $result = $this->client->bulk($this->sql);
+            if(isset($result['items'][0]['index']['status']) &&  $result['items'][0]['index']['status']!=201){
+                throw  new  LogicException('批量插入错误');
+            }
         }catch (\Throwable|\Exception $e){
             $this->logger->error('insert',[
                 'message'=>$e->getMessage(),
@@ -628,6 +631,11 @@ class Builder
                 return $result['_id'] ?? false;
             }
         } catch (\Throwable |\Exception $e) {
+            if($result=Json::decode($e->getMessage())){
+                if(isset($result['status']) &&  $result['status']==404){
+                    return false;
+                }
+            }
             $this->logger->error('insert',[
                 'message'=>$e->getMessage(),
                 'code'=>$e->getCode()
