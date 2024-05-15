@@ -48,7 +48,8 @@ class Client
             $builder->setHandler($handler);
         }
         $logger = $this->container->get(LoggerFactory::class)->get('es', 'default');
-        $client = $builder->setHosts([$config['hosts']])->setLogger($logger)->build();
+        //$client = $builder->setHosts([$config['hosts']])->setLogger($logger)->build();
+        $client = $builder->setHosts([$config['hosts']])->build();
         $logger->info('elasticsearch-logger', $client->info());
         return $client;
 
