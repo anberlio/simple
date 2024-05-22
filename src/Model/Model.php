@@ -8,11 +8,13 @@ use ChaShaoEs\Client;
 use Hyperf\Context\ApplicationContext;
 use Hyperf\Collection\Collection;
 use Hyperf\Contract\Arrayable;
+use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\Jsonable;
 use Elasticsearch\Client as EsClient;
 use Hyperf\Stringable\Str;
 use JsonSerializable;
 use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use function Hyperf\Support\call;
 
@@ -23,6 +25,8 @@ abstract class Model implements Arrayable, Jsonable, JsonSerializable
     protected string $index; //索引
     protected Client $client;
     protected string $connection = 'ChaShao';
+
+    protected string $prefixFormat='%s_%s';
 
     /**
      * @throws ContainerExceptionInterface
@@ -51,22 +55,29 @@ abstract class Model implements Arrayable, Jsonable, JsonSerializable
      */
     public function newQuery(): Builder
     {
+        $config=self::getContainer()->get(ConfigInterface::class)->get($this->connection);
         $self = $this->newModelBuilder()->setModel($this);
         try {
+            $prefix=isset($config['prefix'])??'';
             //注意这里只能用于查询
             if(Str::contains($this->getIndex(),',')){
                 $indexes=array_filter(explode(',',$this->getIndex()));
-                foreach ($indexes as $index){
+                foreach ($indexes as $key=>$index){
+                    $index=sprintf($this->prefixFormat,$prefix,$index);
                     //检查单个索引
                     $this->setIndex($index);
                     //检查索引是否存在，不存在则创建
                     if (!$self->existsIndex()) {
                         $self->createIndex();
                     }
+                    $indexes[$key]=$index;
                 }
                 //充值当前索引
                 $this->setIndex(implode(',',$indexes));
             }else{
+                $index=$this->getIndex();
+                $index=sprintf($this->prefixFormat,$prefix,$index);
+                $this->setIndex($index);
                 //检查索引是否存在，不存在则创建
                 if (!$self->existsIndex()) {
                     $self->createIndex();
@@ -77,6 +88,15 @@ abstract class Model implements Arrayable, Jsonable, JsonSerializable
         }
 
         return $self;
+    }
+
+    /**
+     * 获取container
+     * @return ContainerInterface
+     */
+    public static function getContainer(): ContainerInterface
+    {
+       return   ApplicationContext::getContainer();
     }
 
     /**
