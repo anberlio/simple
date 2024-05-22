@@ -63,7 +63,7 @@ abstract class Model implements Arrayable, Jsonable, JsonSerializable
             if(Str::contains($this->getIndex(),',')){
                 $indexes=array_filter(explode(',',$this->getIndex()));
                 foreach ($indexes as $key=>$index){
-                    $index=strtolower(sprintf($this->prefixFormat,$prefix,$index));
+                    $index=Str::lower(sprintf($this->prefixFormat,$prefix,$index));
                     //检查单个索引
                     $this->setIndex($index);
                     //检查索引是否存在，不存在则创建
@@ -76,7 +76,7 @@ abstract class Model implements Arrayable, Jsonable, JsonSerializable
                 $this->setIndex(implode(',',$indexes));
             }else{
                 $index=$this->getIndex();
-                $index=strtolower(sprintf($this->prefixFormat,$prefix,$index));
+                $index=Str::lower(sprintf($this->prefixFormat,$prefix,$index));
                 $this->setIndex($index);
                 //检查索引是否存在，不存在则创建
                 if (!$self->existsIndex()) {
