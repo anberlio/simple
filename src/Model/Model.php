@@ -77,7 +77,6 @@ abstract class Model implements Arrayable, Jsonable, JsonSerializable
             }else{
                 $index=$this->getIndex();
                 $index=sprintf($this->prefixFormat,$prefix,$index);
-                var_dump($index);
                 $this->setIndex($index);
                 //检查索引是否存在，不存在则创建
                 if (!$self->existsIndex()) {
