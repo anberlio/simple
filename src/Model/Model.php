@@ -26,7 +26,7 @@ abstract class Model implements Arrayable, Jsonable, JsonSerializable
     protected Client $client;
     protected string $connection = 'ChaShao';
 
-    protected string $prefixFormat='%s_%s';
+    protected string $prefixFormat='%s%s';
 
     /**
      * @throws ContainerExceptionInterface
@@ -55,10 +55,10 @@ abstract class Model implements Arrayable, Jsonable, JsonSerializable
      */
     public function newQuery(): Builder
     {
-        $config=self::getContainer()->get(ConfigInterface::class)->get($this->connection);
+
         $self = $this->newModelBuilder()->setModel($this);
         try {
-            $prefix=isset($config['prefix'])??'';
+            $prefix=$this->getPrefix();
             //注意这里只能用于查询
             if(Str::contains($this->getIndex(),',')){
                 $indexes=array_filter(explode(',',$this->getIndex()));
@@ -88,6 +88,20 @@ abstract class Model implements Arrayable, Jsonable, JsonSerializable
         }
 
         return $self;
+    }
+
+
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public  function getPrefix():string{
+        $config=self::getContainer()->get(ConfigInterface::class)->get($this->connection);
+        if(empty($config['prefix'])) return '';
+        if(Str::contains($config['prefix'],'_')){
+            return $config['prefix'];
+        }
+        return $config['prefix'].'_';
     }
 
     /**
