@@ -561,7 +561,7 @@ class Builder
         try {
             $result = $this->client->bulk($this->sql);
             if(isset($result['items'][0]['index']['status']) &&  $result['items'][0]['index']['status']!=201){
-                $this->logger->error('insertErrorInside',[
+                $this->logger->error('批量插入错误insertErrorInside',[
                     'message'=>$result,
                 ]);
                 throw  new  LogicException('批量插入错误');
