@@ -560,7 +560,7 @@ class Builder
         $this->sql = $body;
         try {
             $result = $this->client->bulk($this->sql);
-            if(isset($result['items'][0]['index']['status']) &&  $result['items'][0]['index']['status']!=201){
+            if(isset($result['items'][0]['index']['status']) &&  ($result['items'][0]['index']['status']!=201 ||$result['items'][0]['index']['status']!=200)){
                 $this->logger->error('批量插入错误insertErrorInside',[
                     'message'=>$result,
                 ]);
