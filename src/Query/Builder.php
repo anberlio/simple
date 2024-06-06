@@ -160,6 +160,12 @@ class Builder
         return make(LengthAwarePaginator::class, ['items' => $collection, 'total' => $total, 'perPage' => $size, 'currentPage' => $page]);
     }
 
+
+    public function getCondition():array
+    {
+        return $this->query;
+    }
+
     /**
      * @param array $fields
      * @param int $size
