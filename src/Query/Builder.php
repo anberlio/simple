@@ -94,6 +94,7 @@ class Builder
                     '_source' => [
                         'includes' => $fields
                     ],
+                    'track_total_hits'=>true,//获取到实际的条数
                     'query' => [
                         'match_all' => new \stdClass()
                     ],
@@ -113,6 +114,7 @@ class Builder
                     '_source' => [
                         'includes' => $fields
                     ],
+                    'track_total_hits'=>true,//获取到实际的条数
                     'query' => $this->query,
                     'search_after' => $this->searchAfter,
                     'highlight' => $this->highlight,
